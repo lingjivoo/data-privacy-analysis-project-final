@@ -1,0 +1,2 @@
+ckpt_dir,model_type,test_file,dp_epsilon,B_test_acc,B_test_f1_macro,B_test_f1_entailment,B_test_f1_contradiction,B_test_f1_neutral
+checkpoints/ckpt_A2B_bert_dann_dp_eps0.01,dann,corpus_B/B_val.jsonl,0.01,0.7060478199718706,0.6933804555500352,0.5659340659340659,0.8008088978766431,0.7133984028393966

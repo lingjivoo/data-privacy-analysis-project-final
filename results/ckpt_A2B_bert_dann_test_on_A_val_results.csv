@@ -1,0 +1,2 @@
+ckpt_dir,model_type,test_file,dp_epsilon,B_test_acc,B_test_f1_macro,B_test_f1_entailment,B_test_f1_contradiction,B_test_f1_neutral
+ckpt_A2B_bert_dann_new,dann,corpus_A/A_val_leaky.jsonl,none,0.9571026722925458,0.9571871897899707,0.9472573839662447,0.9755058572949947,0.9487983281086729

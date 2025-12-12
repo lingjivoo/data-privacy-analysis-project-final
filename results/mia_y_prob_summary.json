@@ -1,0 +1,44 @@
+{
+  "method_1_probability": {
+    "best_threshold": 0.9938263924134819,
+    "best_accuracy": 0.5530942334739803
+  },
+  "method_2_cross_entropy": {
+    "best_threshold": 0.009130486870928939,
+    "best_accuracy": 0.549929676511955
+  },
+  "method_3_mentr": {
+    "best_threshold": 0.015047714947897193,
+    "best_accuracy": 0.5358649789029536
+  },
+  "method_4_correct_as_member": {
+    "best_threshold": 0.5,
+    "best_accuracy": 0.519690576652602,
+    "precision": 0.5100719424460431,
+    "recall": 0.9971870604781997,
+    "f1_score": 0.6749167063303189,
+    "confusion_matrix": {
+      "tn": 60,
+      "fp": 1362,
+      "fn": 4,
+      "tp": 1418
+    }
+  },
+  "distribution_comparison_plot_path": "results/mia_y_prob_distribution_comparison.png",
+  "num_samples": 2844,
+  "num_members": 1422,
+  "num_non_members": 1422,
+  "y_prob_min": 0.00012944111949764192,
+  "y_prob_max": 0.9998306035995483,
+  "y_prob_mean": 0.9667639904934786,
+  "y_prob_std": 0.13651949099224325,
+  "ce_min": 0.00016941074964239354,
+  "ce_max": 8.952284455914901,
+  "ce_mean": 0.08502788389740297,
+  "ce_std": 0.5478922936885623,
+  "mentr_min": 4.305972187447637e-08,
+  "mentr_max": 15.032624259346864,
+  "mentr_mean": 0.12258331694720766,
+  "mentr_std": 0.9557971192790118,
+  "csv_path": "results/member_inference_records.csv"
+}

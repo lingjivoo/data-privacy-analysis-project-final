@@ -1,0 +1,2 @@
+ckpt_dir,model_type,test_file,dp_epsilon,B_test_acc,B_test_f1_macro,B_test_f1_entailment,B_test_f1_contradiction,B_test_f1_neutral
+ckpt_bert_A_finetune_max512/,baseline,corpus_A/A_val_leaky.jsonl,none,0.9578059071729957,0.9576830338369361,0.9446254071661238,0.9780104712041885,0.9504132231404959

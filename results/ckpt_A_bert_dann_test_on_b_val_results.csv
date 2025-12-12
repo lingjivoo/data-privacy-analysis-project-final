@@ -1,0 +1,2 @@
+ckpt_dir,model_type,test_file,dp_epsilon,B_test_acc,B_test_f1_macro,B_test_f1_entailment,B_test_f1_contradiction,B_test_f1_neutral
+ckpt_bert_A_finetune_max512/,baseline,corpus_B/B_val.jsonl,none,0.8073136427566807,0.8045488341742102,0.7424425634824667,0.8850102669404517,0.7861936720997124

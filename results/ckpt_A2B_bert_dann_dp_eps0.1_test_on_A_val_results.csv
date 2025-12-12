@@ -1,0 +1,3 @@
+ckpt_dir,model_type,test_file,dp_epsilon,B_test_acc,B_test_f1_macro,B_test_f1_entailment,B_test_f1_contradiction,B_test_f1_neutral
+checkpoints/ckpt_A2B_bert_dann_dp_eps0.1,dann,corpus_A/A_val_leaky.jsonl,0.1,0.8635724331926864,0.862626516919497,0.8486772486772487,0.888235294117647,0.850967007963595
+checkpoints/ckpt_A2B_bert_dann_dp_eps0.1,dann,corpus_A/A_val_leaky.jsonl,0.1,0.8635724331926864,0.862626516919497,0.8486772486772487,0.888235294117647,0.850967007963595
