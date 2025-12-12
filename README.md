@@ -32,18 +32,15 @@ At the same time, we need to:
 
 We focus on the following research questions:
 
-* **RQ1 (Utility under DP on A)**
-  When fine-tuning BERT only on domain A and adding DP-SGD (different ε), how does the B-domain test performance degrade?
-
-* **RQ2 (DP + Domain Adaptation)**
+* **RQ1 (DP + Domain Adaptation)**
   When adding **DANN domain adaptation** to BERT and then applying DP-SGD (DP-DANN), how does the impact on B-domain performance differ compared to DP-BERT alone?
 
-* **RQ3 (Privacy on A & Cross-Domain Leakage)**
+* **RQ2 (Privacy on A & Cross-Domain Leakage)**
 
   * How does the membership inference attack (MIA) success rate on **A-domain training data** change under no DP / DP-BERT / DP-DANN?
   * If only observing **B-domain output**, can attackers "indirectly" recover A-domain synthetic PHI (i.e., "attack A, observe B")? Can DP suppress this cross-domain leakage?
 
-* **RQ4 (Utility–Privacy Trade-off)**
+* **RQ3 (Utility–Privacy Trade-off)**
   As the DP budget ε changes,
 
   * How does B-domain utility (Acc/F1) change?
