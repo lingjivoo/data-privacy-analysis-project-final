@@ -1,0 +1,35 @@
+{
+  "seed": 2025,
+  "n_seen": 1422,
+  "A_means": {
+    "age_A": 59.429,
+    "temp_A": 79.26,
+    "hr_A": 94.333,
+    "sbp_A": 131.429,
+    "dbp_A": 76.571,
+    "rr_A": 17.167,
+    "spo2_A": null
+  },
+  "shifts": {
+    "age": 8.0,
+    "hr": 8.0,
+    "sbp": 15.0,
+    "dbp": 10.0,
+    "rr": 4.0,
+    "spo2": -3.0
+  },
+  "noise": {
+    "temp_c_noise": 0.3,
+    "vital_noise_std": 1.0
+  },
+  "style": {
+    "prefix_p": 0.9,
+    "filler_p": 0.9,
+    "case_lower_p": 0.6,
+    "case_cap_p": 0.3,
+    "punct_p": 0.8,
+    "note_style_p": 0.95,
+    "section_reorder_p": 0.9
+  },
+  "deterministic": false
+}

@@ -1,0 +1,11 @@
+python scripts/train_bert_classifier.py \
+   --train_jsonl corpus_A/A_train_leaky.jsonl  \
+  --val_jsonl   corpus_A/A_val_leaky.jsonl   \
+  --out_dir ckpt_bert_A \
+  --encoder_name pritamdeka/BioBERT-mnli-snli-scinli-scitail-mednli-stsb \
+  --pooling mean \
+  --max_length 2048 \
+  --epochs 80000 \
+  --batch_size 256 \
+  --lr 5e-2 \
+  --dp_epsilon 0       # set >0 to enable DP-SGD
