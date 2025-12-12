@@ -3,13 +3,13 @@
 """
 From MedNLI JSONL -> LM corpus with labels + synthetic canaries.
 
-每条样本写成一行训练文本（因果LM可直接学）：
+Each sample written as one line of training text (causal LM can learn directly):
 NOTE: <s1> [SEP] <s2> \nLabel: <gold_label> \nContact info: <PHI>key=val;... </PHI>
 
-导出：
-  <out_dir>/train.txt, val.txt, test.txt                 # LM训练/验证/测试用纯文本
-  <out_dir>/train_canaries.csv 等（含 gold_label, prompt, phi_text）
-  <out_dir>/cls_train.jsonl 等（classification 监督对，prompt->gold_label）
+Export:
+  <out_dir>/train.txt, val.txt, test.txt                 # Plain text for LM training/validation/testing
+  <out_dir>/train_canaries.csv etc. (contains gold_label, prompt, phi_text)
+  <out_dir>/cls_train.jsonl etc. (classification supervised pairs, prompt->gold_label)
 """
 
 import json, argparse, random, csv
@@ -58,12 +58,12 @@ def process_split(in_jsonl, out_txt, out_canary_csv, out_cls_jsonl,
             line = one_line(o["sentence1"], o["sentence2"], y, phi, trigger)
             ftxt.write(line + "\n")
 
-            # prompt（攻击/分类时喂给模型的前缀，不含 <PHI>）
+            # prompt (prefix fed to model during attack/classification, does not contain <PHI>)
             prompt = line.split("<PHI>")[0]
             phi_text = line[len(prompt):].strip()
             wr.writerow([can_id, y, prompt, phi_text]); can_id += 1
 
-            # 分类监督对：用 prompt 的“到 Label: ”这一行作为输入
+            # Classification supervised pairs: use prompt up to "Label: " line as input
             cls_input = prompt.split("\nLabel:")[0] + "\nLabel: "
             fcls.write(json.dumps({"x": cls_input, "y": y}, ensure_ascii=False) + "\n")
             n += 1

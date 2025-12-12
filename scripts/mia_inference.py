@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Inference script based on A_train_leaky.jsonl (members) and A_test_leaky.jsonl (non-members).
-Process:
-  1) Reuse eval_on_B's model loading logic, run model to get logits/softmax.
-  2) Record softmax, predicted labels, whether prediction is correct, etc. for each sample.
-  3) True member labels: train=1, test=0.
-  4) Output member_inference_records.csv.
+MIA inference: run model on A_train (members) and A_test (non-members)
+Steps:
+  1) Reuse eval_on_B model loading, get logits/softmax
+  2) Record softmax, predictions, correctness for each sample
+  3) Member labels: train=1, test=0
+  4) Output to member_inference_records.csv
 """
 
 import argparse
@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-# 同目录下的推理工具
+# Reuse eval_on_B utilities
 from eval_on_B import (
     LABEL2ID,
     TextDatasetXY,
@@ -26,7 +26,7 @@ from eval_on_B import (
     make_collate,
 )
 
-# Numerical stability to avoid log(0)
+# Small epsilon to avoid log(0)
 EPSILON = 1e-10
 
 
@@ -64,7 +64,7 @@ def compute_mentr(probs, y_true):
 
 
 def infer_dataset(model, tokenizer, X_txt, y, max_length, device, model_type, batch_size=64):
-    """Perform inference on given text collection, return softmax/predictions/labels."""
+    """Runs inference on text data, returns softmax probs, predictions, labels"""
     ds = TextDatasetXY(X_txt, y)
     collate = make_collate(tokenizer, max_length)
     dl = DataLoader(ds, batch_size=batch_size, shuffle=False, collate_fn=collate)
@@ -109,14 +109,14 @@ def infer_dataset(model, tokenizer, X_txt, y, max_length, device, model_type, ba
 
 
 def save_csv(rows, out_path: Path):
-    """Save inference results to CSV file."""
+    """Saves results to CSV"""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = list(rows[0].keys())
     with open(out_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
-    print(f"[mia_correct] 结果已写入 {out_path}")
+    print(f"[mia_correct] Results written to {out_path}")
 
 
 def main():

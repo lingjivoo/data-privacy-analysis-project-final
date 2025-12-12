@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# 仅重新提交缺失结果的白盒攻击任务：
-# - ckpt_A2B_bert_dann_dp_eps0.5 (B 数据)
-# - ckpt_A2B_bert_dann_dp_eps10.0 (A 数据)
-# - ckpt_A2B_bert_dann_dp_eps1.0 (A 数据)
+# Resubmit missing white-box attack jobs
 set -euo pipefail
 
 source /ibex/user/yangz0h/miniconda3/etc/profile.d/conda.sh
@@ -14,11 +11,11 @@ LOG_DIR="${ROOT}/slurm_logs"
 mkdir -p "${LOG_DIR}"
 
 if [[ ! -d "${CHECKPOINTS_DIR}" ]]; then
-  echo "未找到检查点目录: ${CHECKPOINTS_DIR}" >&2
+  echo "Checkpoint directory not found: ${CHECKPOINTS_DIR}" >&2
   exit 1
 fi
 
-# 目标列表：格式 ckpt_name:data_tag(A/B)
+# Jobs to resubmit: format ckpt_name:data_tag
 targets=(
   "ckpt_A2B_bert_dann_dp_eps0.05:B"
   "ckpt_A2B_bert_dann_dp_eps0.05:A"
@@ -27,9 +24,9 @@ targets=(
 
 for entry in "${targets[@]}"; do
   ckpt_name="${entry%%:*}"
-  dataset_name="${entry##*:}"  # A 或 B
+  dataset_name="${entry##*:}"
 
-  # 模型类型判定：默认 dann，特例 ckpt_bert_A_finetune_max512 用 baseline
+  # Determine model type
   model_type="dann"
   if [[ "${ckpt_name}" == "ckpt_bert_A_finetune_max512" ]]; then
     model_type="baseline"
@@ -59,8 +56,8 @@ for entry in "${targets[@]}"; do
     --parsable \
     --wrap "${cmd}")
 
-  echo "已重新提交: ${job_name} (数据集: ${dataset_name}, 模型类型: ${model_type}) -> JobID ${job_id}, 日志: ${log_file}"
+  echo "Resubmitted: ${job_name} (dataset: ${dataset_name}, model type: ${model_type}) -> JobID ${job_id}, log: ${log_file}"
 done
 
-echo "全部缺失任务已提交。如需汇总，请之后运行 scripts/summarize_white_attack.sh"
+echo "All missing tasks submitted. Run scripts/summarize_white_attack.sh later to summarize"
 

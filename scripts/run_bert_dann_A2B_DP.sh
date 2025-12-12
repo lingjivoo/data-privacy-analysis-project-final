@@ -1,23 +1,23 @@
 #!/bin/bash
-# BERT-based DANN / DP-DANN 域自适应训练脚本
-# 使用 train_domain_adapt_A2B.py（BERT 版本，不再使用 TF-IDF）
+# Train DP-DANN for domain adaptation A->B
+# Uses train_domain_adapt_A2B_DP.py
 
-set -e  # 任一命令出错则退出
+set -e
 
 echo "=========================================="
 echo "BERT-DANN: Domain Adaptation A -> B"
 echo "=========================================="
 
-# -------- 路径设置 --------
+# Paths
 A_TRAIN="corpus_A/A_train_leaky.jsonl"
 A_VAL="corpus_A/A_val_leaky.jsonl"
 B_TRAIN="corpus_B/B_train.jsonl"
 B_VAL="corpus_B/B_val.jsonl"
 
-# 在 A 上预训练好的 BERT baseline checkpoint
+# Pretrained BERT checkpoint (trained on A)
 PRETRAINED_CKPT_DIR="ckpt_bert_A_finetune_max512"
 
-# 检查文件/目录是否存在
+# Check files exist
 if [ ! -f "$A_TRAIN" ]; then
   echo "Error: $A_TRAIN not found"; exit 1
 fi
@@ -32,8 +32,8 @@ fi
 
 if [ ! -d "$PRETRAINED_CKPT_DIR" ]; then
   echo "Error: pretrained checkpoint dir $PRETRAINED_CKPT_DIR not found"
-  echo "请先用 train_bert_nli_on_A.py 在 A 上训练 baseline (finetune_encoder 模式)，"
-  echo "并将输出目录命名为 ckpt_bert_A_finetune 或修改此脚本中的 PRETRAINED_CKPT_DIR。"
+  echo "Need to train baseline first on A (train_bert_nli_on_A.py, finetune_encoder mode)"
+  echo "Or update PRETRAINED_CKPT_DIR to point to your checkpoint"
   exit 1
 fi
 
@@ -43,9 +43,9 @@ echo "Using B-train: $B_TRAIN"
 echo "Pretrained ckpt dir: $PRETRAINED_CKPT_DIR"
 echo ""
 
-# -------- 2. DP-DANN (多个 epsilon) --------
+# Train DP-DANN with different epsilon values
 echo ""
-echo "[2/5] Train BERT-DANN with DP-SGD ..."
+echo "[2/5] Training BERT-DANN with DP-SGD ..."
 
 for EPS in 2.0 5.0 10.0; do
   OUT_DIR="checkpoints/ckpt_A2B_bert_dann_dp_eps${EPS}"

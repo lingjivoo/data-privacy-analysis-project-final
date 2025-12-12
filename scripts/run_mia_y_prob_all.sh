@@ -1,7 +1,7 @@
 #!/bin/bash -l
-# 遍历 mia_inference_result 下的所有 CSV，依次运行 mia_y_prob.py
-# 结果统一写到 results/y_prob_results/ 前缀下
-# 用法：bash scripts/run_mia_y_prob_all.sh
+# Process all CSVs in mia_inference_result with mia_y_prob.py
+# Outputs go to results/y_prob_results/
+# Usage: bash scripts/run_mia_y_prob_all.sh
 
 set -euo pipefail
 
@@ -21,7 +21,6 @@ echo "===== run_mia_y_prob_all $(date '+%F %T') =====" > "${LOG_FILE}"
 for csv_file in "${CSV_DIR}"/*.csv; do
   [[ -f "${csv_file}" ]] || continue
   base_name="$(basename "${csv_file}" .csv)"
-  # 输出前缀：results/y_prob_results/<base_name>_y_prob
   output_prefix="y_prob_results/${base_name}"
   echo "[run] ${base_name} -> ${output_prefix}" | tee -a "${LOG_FILE}"
   python scripts/mia_y_prob.py \
@@ -29,5 +28,5 @@ for csv_file in "${CSV_DIR}"/*.csv; do
     --output_prefix "${output_prefix}" | tee -a "${LOG_FILE}"
 done
 
-echo "[done] 所有 CSV 已处理，结果位于 results/y_prob_results/" | tee -a "${LOG_FILE}"
+echo "[done] All CSVs processed, results located at results/y_prob_results/" | tee -a "${LOG_FILE}"
 

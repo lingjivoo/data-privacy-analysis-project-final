@@ -4,12 +4,12 @@
 Make Hospital B with matched distributions across splits and stable shift vs A.
 
 Usage:
-# 1) 从 A_train 拟合全局偏移并写出 config
+# 1) Fit global shift from A_train and write config
 python scripts/hospitalB_shift_pipeline.py fit \
   --in_jsonl corpus_A/A_train_leaky.jsonl \
   --out_config corpus_B/shift_config.json
 
-# 2) 用同一 config 逐个把 A_* 变成 B_*
+# 2) Use the same config to transform each A_* into B_*
 python scripts/hospitalB_shift_pipeline.py transform \
   --in_jsonl corpus_A/A_train_leaky.jsonl \
   --out_jsonl corpus_B/B_train.jsonl \
@@ -35,7 +35,7 @@ random.seed(SEED)
 
 B_TAG = "Hospital B"
 
-# --------- 解析正则 ----------
+# --------- Parse regex patterns ----------
 RE_AGE = re.compile(r'(\b)(\d{1,3})(\s*year[s]?\s+old\b)', re.IGNORECASE)
 RE_T_F = re.compile(r'\bT\s*([0-9]+(?:\.[0-9]+)?)\b')            # T 98.9
 RE_TEMP_EQ = re.compile(r'\bTemp\s*=\s*([0-9]+(?:\.[0-9]+)?)\b')  # Temp=37.1
@@ -49,7 +49,7 @@ RE_SPO2_2 = re.compile(r'\bSpO2\s*(?:sat|sats)?\s*([0-9]+(?:\.[0-9]+)?)%\b', re.
 
 
 NOTE_ABBR = [
-    # 常见病历短语缩写 / 改写
+    # Common medical note phrase abbreviations / rewrites
     (re.compile(r"\bthe patient\b", re.IGNORECASE), "pt"),
     (re.compile(r"\bpatient\b", re.IGNORECASE), "pt"),
     (re.compile(r"\bcomplains of\b", re.IGNORECASE), "c/o"),
@@ -69,14 +69,14 @@ NOTE_ABBR = [
 
 NOTE_SECTIONS = ["HPI", "PMH", "O/E", "PLAN", "IMPRESSION"]
 
-# 显式 domain token
+# Explicit domain token
 B_DOMAIN_TAG = "[B-HOSP]"
 
-# section 检测
+# Section detection
 SECTION_PAT = re.compile(r'\b(HPI|PMH|O/E|PLAN|IMPRESSION)\s*:\s*', re.IGNORECASE)
 
 
-# 英式拼写替换与写法（transform 阶段统一做）
+# British spelling replacements and style (done uniformly in transform phase)
 BRITISH_MAP = [
     ("hemoglobin", "haemoglobin"),
     ("hematology", "haematology"),
@@ -101,8 +101,8 @@ def make_faker(locale="en_GB"):
 
 def reorder_sections(s: str) -> str:
     """
-    找到 HPI:/PMH:/O/E:/PLAN:/IMPRESSION: 这些 section block，
-    把它们整体打乱顺序，改变大结构的顺序。
+    Find section blocks like HPI:/PMH:/O/E:/PLAN:/IMPRESSION:,
+    shuffle their overall order to change the structure order.
     """
     matches = list(SECTION_PAT.finditer(s))
     if len(matches) < 2:
@@ -114,40 +114,40 @@ def reorder_sections(s: str) -> str:
         end = matches[i + 1].start() if i + 1 < len(matches) else len(s)
         spans.append(s[start:end].strip())
 
-    # 随机重排 section block 的顺序
+    # Randomly shuffle section block order
     random.shuffle(spans)
     return " ; ".join(spans)
 
 
 def to_note_style(s: str) -> str:
     """
-    把叙述性句子改写成更像 UK triage / ED note 的风格：
-    - 使用常见缩写 (pt, c/o, Hx, SOB, CP, DM, HTN, ESRD, MVC...)
-    - 用标点/连接词切成多个 clause
-    - 随机重排、截断为 1–3 个 clause
-    - 每个 clause 加 section: HPI:, PMH:, O/E:, PLAN:, IMPRESSION:
+    Rewrite narrative sentences to be more like UK triage / ED note style:
+    - Use common abbreviations (pt, c/o, Hx, SOB, CP, DM, HTN, ESRD, MVC...)
+    - Split into multiple clauses using punctuation/connectors
+    - Randomly shuffle and truncate to 1–3 clauses
+    - Add section label to each clause: HPI:, PMH:, O/E:, PLAN:, IMPRESSION:
     """
     t = s
 
-    # 0) 统一做一次缩写替换
+    # 0) Uniformly do abbreviation replacement once
     for pat, rep in NOTE_ABBR:
         t = pat.sub(rep, t)
 
-    # 1) 用标点/连接词切分为 clause
+    # 1) Split into clauses using punctuation/connectors
     clauses = re.split(r"[.;]| and | but ", t)
     clauses = [c.strip() for c in clauses if c.strip()]
 
     if not clauses:
         return t
 
-    # 2) 随机重排，并可缩短为前 1–3 个子句
+    # 2) Randomly shuffle and can shorten to first 1–3 clauses
     if len(clauses) > 1:
         random.shuffle(clauses)
-        if random.random() < 0.7:  # 更高概率只保留部分 clause
+        if random.random() < 0.7:  # Higher probability to keep only part of clauses
             k = random.randint(1, min(3, len(clauses)))
             clauses = clauses[:k]
 
-    # 3) 给每个 clause 随机加上一个 section label
+    # 3) Randomly add a section label to each clause
     out_parts = []
     for c in clauses:
         if not c:
@@ -194,12 +194,12 @@ def phi_to_text(phi):
 def _clip(x, lo, hi): return max(lo, min(hi, x))
 def _mean(lst): return round(statistics.mean(lst), 3) if lst else None
 
-# ---- 抽取 A 的简单统计（仅依赖能解析到的片段）----
+# ---- Extract simple statistics from A (only depends on parseable fragments) ----
 def parse_stats_from_text(s, stats):
-    # 年龄
+    # Age
     for m in RE_AGE.finditer(s):
         stats["age_A"].append(int(m.group(2)))
-    # 温度（两种写法）
+    # Temperature (two formats)
     for m in RE_T_F.finditer(s):
         try: stats["temp_A"].append(float(m.group(1)))
         except: pass
@@ -229,19 +229,19 @@ def parse_stats_from_text(s, stats):
         except: pass
 
 def fit_on_A(in_jsonl, out_config,
-             # 数值 shift：比之前更大，制造更明显的病情偏移
+             # Numerical shift: larger than before, create more obvious condition shift
              age_shift=+8.0, hr_shift=+8.0,
              sbp_shift=+15.0, dbp_shift=+10.0,
              rr_shift=+4.0, spo2_shift=-3.0,
-             # 噪声略大一些
+             # Slightly larger noise
              temp_c_noise=0.3,
              vital_noise_std=1.0,
-             # 风格扰动：更高概率 prefix / filler / note-style
+             # Style perturbation: higher probability prefix / filler / note-style
              style_prefix_p=0.9, style_filler_p=0.9,
              style_case_lower_p=0.6, style_case_cap_p=0.3,
              style_punct_p=0.8, style_note_p=0.9,
              deterministic=False):
-    """确定 B 的“目标偏移 + 噪声规模 + 风格概率”."""
+    """Determine B's 'target shift + noise scale + style probabilities'."""
     stats = {k: [] for k in ["age_A","temp_A","hr_A","sbp_A","dbp_A","rr_A","spo2_A"]}
     n = 0
     with open(in_jsonl, "r", encoding="utf-8") as f:
@@ -290,19 +290,19 @@ def fit_on_A(in_jsonl, out_config,
 
 
 
-# ------------- 变换：把 A -> B -----------------
+# ------------- Transform: A -> B -----------------
 def apply_style_and_british(s, cfg):
-    # 英式拼写
+    # British spelling
     for a, b in BRITISH_MAP:
         s = re.sub(rf'\b{re.escape(a)}\b', b, s, flags=re.IGNORECASE)
 
-    # 统一部分 vital key 写法
+    # Unify some vital key formats
     s = re.sub(r'\bHR\b', 'HeartRate:', s)
     s = re.sub(r'\bBP\b', 'BP=', s)
     s = re.sub(r'\bRR\b', 'RespRate=', s)
     s = re.sub(r'\bO2\b', 'SpO2', s)
 
-    # 清理奇怪的 "°c°c"
+    # Clean up strange "°c°c"
     s = re.sub(r'°c°c', '°C', s, flags=re.IGNORECASE)
     s = re.sub(r'°c', '°C', s, flags=re.IGNORECASE)
 
@@ -315,17 +315,17 @@ def apply_style_and_british(s, cfg):
     if rnd() < st.get("prefix_p", 0.5):
         s = random.choice(PREFIXES) + s
 
-    # 大小写
+    # Case
     if rnd() < st.get("case_lower_p", st.get("case_p", 0.0)):
         s = s.lower()
     if rnd() < st.get("case_cap_p", st.get("case_p", 0.0)):
         s = s.capitalize()
 
-    # 标点
+    # Punctuation
     if rnd() < st.get("punct_p", 0.25):
         s = s.replace(".", " ·")
 
-    # 注意：这里不再加 [B-HOSP]，在 transform_text 统一处理
+    # Note: [B-HOSP] is no longer added here, handled uniformly in transform_text
     return s
 
 

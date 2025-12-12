@@ -391,7 +391,7 @@ def train_white_box_classifier(train_features, train_labels, test_features, test
     train_features_scaled = scaler.fit_transform(train_features)
     test_features_scaled = scaler.transform(test_features)
     
-    # 创建数据集
+    # Create datasets
     train_dataset = WhiteBoxFeatureDataset(train_features_scaled, train_labels)
     test_dataset = WhiteBoxFeatureDataset(test_features_scaled, test_labels)
     

@@ -1,6 +1,6 @@
 #!/bin/bash -l
-# 遍历 checkpoints 下所有模型，对 A/B 数据各跑一次 mia_inference.py
-# 提交方式：sbatch scripts/run_mia_inference_all.sh
+# Run mia_inference.py on all checkpoints for both A and B data
+# Submit with: sbatch scripts/run_mia_inference_all.sh
 
 #SBATCH --time=01:30:00
 #SBATCH --nodes=1
@@ -28,7 +28,7 @@ for CKPT_PATH in "${CHECKPOINT_DIR}"/*; do
   [[ -d "${CKPT_PATH}" ]] || continue
   CKPT_NAME="$(basename "${CKPT_PATH}")"
 
-  # 模型类型：特例 ckpt_bert_A_finetune_max512 用 baseline，其它用 dann
+  # Determine model type
   MODEL_TYPE="dann"
   if [[ "${CKPT_NAME}" == "ckpt_bert_A_finetune_max512" ]]; then
     MODEL_TYPE="baseline"
@@ -44,13 +44,13 @@ for CKPT_PATH in "${CHECKPOINT_DIR}"/*; do
     fi
 
     if [[ ! -f "${TRAIN_JSONL}" || ! -f "${TEST_JSONL}" ]]; then
-      echo "[skip] ${CKPT_NAME} ${DATA_TAG}: 数据文件缺失，跳过"
+      echo "[skip] ${CKPT_NAME} ${DATA_TAG}: Data files missing, skipping"
       continue
     fi
 
     OUT_CSV="${RESULT_DIR}/${CKPT_NAME}_${DATA_TAG}.csv"
 
-    echo "[run] 模型=${CKPT_NAME} (type=${MODEL_TYPE}) 数据=${DATA_TAG} -> ${OUT_CSV}"
+    echo "[run] Model=${CKPT_NAME} (type=${MODEL_TYPE}) Data=${DATA_TAG} -> ${OUT_CSV}"
     python scripts/mia_inference.py \
       --ckpt_dir "${CKPT_PATH}" \
       --model_type "${MODEL_TYPE}" \
@@ -60,5 +60,5 @@ for CKPT_PATH in "${CHECKPOINT_DIR}"/*; do
   done
 done
 
-echo "[done] 全部模型已完成遍历"
+echo "[done] All models have been processed"
 

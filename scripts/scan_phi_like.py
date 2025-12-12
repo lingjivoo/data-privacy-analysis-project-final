@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-扫描文本中的PHI-like片段（用于隐私攻击评估）
-支持从JSONL文件或标准输入读取，输出TP/FP/TN/FN统计
+Scan for PHI-like fragments in text (for privacy attack evaluation)
+Supports reading from JSONL files or standard input, outputs TP/FP/TN/FN statistics
 """
 
 import json, argparse, re, sys
 from pathlib import Path
 from collections import Counter
 
-# PHI模式：姓名、电话、邮箱、MRN、日期等
+# PHI patterns: names, phone numbers, emails, MRN, dates, etc.
 PHI_PATTERNS = [
-    (re.compile(r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b'), 'name'),  # 简单姓名模式
-    (re.compile(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'), 'phone'),  # 电话
-    (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'), 'email'),  # 邮箱
+    (re.compile(r'\b[A-Z][a-z]+\s+[A-Z][a-z]+\b'), 'name'),  # Simple name pattern
+    (re.compile(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b'), 'phone'),  # Phone number
+    (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'), 'email'),  # Email
     (re.compile(r'\bMRN[-]?[A-Z0-9-]+\b', re.IGNORECASE), 'mrn'),  # MRN
-    (re.compile(r'\b\d{4}[-/]\d{2}[-/]\d{2}\b'), 'date'),  # 日期 YYYY-MM-DD
-    (re.compile(r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b'), 'date_alt'),  # 日期 MM/DD/YYYY
-    (re.compile(r'\b\d{1,3}\s+[A-Z][a-z]+\s+Street\b', re.IGNORECASE), 'address'),  # 地址
+    (re.compile(r'\b\d{4}[-/]\d{2}[-/]\d{2}\b'), 'date'),  # Date YYYY-MM-DD
+    (re.compile(r'\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b'), 'date_alt'),  # Date MM/DD/YYYY
+    (re.compile(r'\b\d{1,3}\s+[A-Z][a-z]+\s+Street\b', re.IGNORECASE), 'address'),  # Address
 ]
 
 def extract_phi_spans(text):
-    """从文本中提取所有PHI-like片段"""
+    """Extract all PHI-like fragments from text"""
     spans = []
     for pattern, phi_type in PHI_PATTERNS:
         for match in pattern.finditer(text):
@@ -34,28 +34,28 @@ def extract_phi_spans(text):
     return spans
 
 def check_phi_in_text(text, phi_text=""):
-    """检查文本中是否包含PHI信息"""
+    """Check if text contains PHI information"""
     if not phi_text:
         return False, []
     
-    # 提取文本中的PHI片段
+    # Extract PHI fragments from text
     spans = extract_phi_spans(text)
     
-    # 检查是否与phi_text有重叠
+    # Check if there's overlap with phi_text
     phi_words = set(phi_text.lower().split())
     found_phi = False
     matched_spans = []
     
     for span in spans:
         span_words = set(span['text'].lower().split())
-        if span_words & phi_words:  # 有交集
+        if span_words & phi_words:  # Has intersection
             found_phi = True
             matched_spans.append(span)
     
     return found_phi, matched_spans
 
 def scan_jsonl_file(in_path, output_stats=True):
-    """扫描JSONL文件中的PHI-like片段"""
+    """Scan for PHI-like fragments in JSONL file"""
     tp = fp = tn = fn = 0
     all_spans = Counter()
     
@@ -71,14 +71,14 @@ def scan_jsonl_file(in_path, output_stats=True):
                 
                 has_phi, spans = check_phi_in_text(text, phi_text)
                 
-                # 统计
+                # Statistics
                 for span in spans:
                     all_spans[span['type']] += 1
                 
-                # TP: leak_flag=1 且检测到PHI
-                # FP: leak_flag=0 但检测到PHI
-                # TN: leak_flag=0 且未检测到PHI
-                # FN: leak_flag=1 但未检测到PHI
+                # TP: leak_flag=1 and PHI detected
+                # FP: leak_flag=0 but PHI detected
+                # TN: leak_flag=0 and no PHI detected
+                # FN: leak_flag=1 but no PHI detected
                 if leak_flag == 1:
                     if has_phi:
                         tp += 1
@@ -120,7 +120,7 @@ def scan_jsonl_file(in_path, output_stats=True):
     }
 
 def scan_stdin():
-    """从标准输入读取并扫描"""
+    """Read from standard input and scan"""
     tp = fp = tn = fn = 0
     all_spans = Counter()
     

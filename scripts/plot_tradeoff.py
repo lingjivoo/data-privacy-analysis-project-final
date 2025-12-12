@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-绘制Utility-Privacy Trade-off曲线
-从results/目录读取CSV文件，生成图表
+Plot Utility-Privacy Trade-off curves
+Read CSV files from results/ directory and generate plots
 """
 
 import pandas as pd
@@ -12,26 +12,26 @@ from pathlib import Path
 import json
 
 def load_results():
-    """加载所有结果CSV文件"""
+    """Load all result CSV files"""
     results_dir = Path("results")
     results = {}
     
-    # 加载基线结果
+    # Load baseline results
     baseline_file = results_dir / "baseline_A_results.csv"
     if baseline_file.exists():
         results['baseline'] = pd.read_csv(baseline_file)
     
-    # 加载DANN结果
+    # Load DANN results
     dann_file = results_dir / "dann_A2B_results.csv"
     if dann_file.exists():
         results['dann'] = pd.read_csv(dann_file)
     
-    # 加载B域评估结果
+    # Load B domain evaluation results
     eval_file = results_dir / "eval_B_results.csv"
     if eval_file.exists():
         results['eval_B'] = pd.read_csv(eval_file)
     
-    # 加载MIA攻击结果
+    # Load MIA attack results
     mia_file = results_dir / "mia_results.csv"
     if mia_file.exists():
         results['mia'] = pd.read_csv(mia_file)
@@ -39,27 +39,27 @@ def load_results():
     return results
 
 def plot_utility_privacy_tradeoff(results, output_dir="results"):
-    """绘制Utility-Privacy Trade-off曲线"""
+    """Plot Utility-Privacy Trade-off curves"""
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
     
-    # 合并数据
+    # Merge data
     if 'eval_B' in results and 'mia' in results:
-        # 通过ckpt_dir合并
+        # Merge by ckpt_dir
         eval_df = results['eval_B']
         mia_df = results['mia']
         
-        # 提取epsilon值
+        # Extract epsilon values
         eval_df['epsilon'] = eval_df['dp_epsilon'].apply(lambda x: float(x) if str(x) != 'none' and x != 'none' else 0.0)
         mia_df['epsilon'] = mia_df['dp_epsilon'].apply(lambda x: float(x) if str(x) != 'none' and x != 'none' else 0.0)
         
-        # 合并
+        # Merge
         merged = pd.merge(eval_df, mia_df, on='ckpt_dir', suffixes=('_eval', '_mia'), how='inner')
         
         if len(merged) > 0:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
             
-            # 左图：Utility vs Epsilon
+            # Left plot: Utility vs Epsilon
             for model_type in merged['model_type_eval'].unique():
                 subset = merged[merged['model_type_eval'] == model_type]
                 ax1.plot(subset['epsilon'], subset['B_test_acc'], 'o-', label=f'{model_type} (B-test Acc)')
@@ -70,7 +70,7 @@ def plot_utility_privacy_tradeoff(results, output_dir="results"):
             ax1.legend()
             ax1.grid(True, alpha=0.3)
             
-            # 右图：Privacy Attack Success vs Epsilon
+            # Right plot: Privacy Attack Success vs Epsilon
             for model_type in merged['model_type_eval'].unique():
                 subset = merged[merged['model_type_eval'] == model_type]
                 ax2.plot(subset['epsilon'], subset['roc_auc'], 's-', label=f'{model_type} (MIA ROC-AUC)')
@@ -85,7 +85,7 @@ def plot_utility_privacy_tradeoff(results, output_dir="results"):
             plt.savefig(output_dir / 'utility_privacy_tradeoff.png', dpi=300)
             print(f"Saved trade-off plot to {output_dir / 'utility_privacy_tradeoff.png'}")
     
-    # 绘制单独的Utility曲线
+    # Plot separate Utility curve
     if 'eval_B' in results:
         eval_df = results['eval_B']
         eval_df['epsilon'] = eval_df['dp_epsilon'].apply(lambda x: float(x) if str(x) != 'none' and x != 'none' else 0.0)
@@ -105,7 +105,7 @@ def plot_utility_privacy_tradeoff(results, output_dir="results"):
         plt.savefig(output_dir / 'utility_curve.png', dpi=300)
         print(f"Saved utility curve to {output_dir / 'utility_curve.png'}")
     
-    # 绘制Privacy攻击曲线
+    # Plot Privacy attack curve
     if 'mia' in results:
         mia_df = results['mia']
         mia_df['epsilon'] = mia_df['dp_epsilon'].apply(lambda x: float(x) if str(x) != 'none' and x != 'none' else 0.0)
@@ -126,13 +126,13 @@ def plot_utility_privacy_tradeoff(results, output_dir="results"):
         print(f"Saved privacy attack curve to {output_dir / 'privacy_attack_curve.png'}")
 
 def generate_summary_table(results, output_file="results/summary_table.csv"):
-    """生成汇总表格"""
+    """Generate summary table"""
     output_file = Path(output_file)
     output_file.parent.mkdir(exist_ok=True)
     
     summary_rows = []
     
-    # 汇总基线结果
+    # Summarize baseline results
     if 'baseline' in results:
         for _, row in results['baseline'].iterrows():
             summary_rows.append({
@@ -145,7 +145,7 @@ def generate_summary_table(results, output_file="results/summary_table.csv"):
                 'mia_roc_auc': 'N/A'
             })
     
-    # 汇总评估结果
+    # Summarize evaluation results
     if 'eval_B' in results:
         eval_dict = {}
         for _, row in results['eval_B'].iterrows():
@@ -155,13 +155,13 @@ def generate_summary_table(results, output_file="results/summary_table.csv"):
                 'B_test_f1': row.get('B_test_f1_macro', 0.0)
             }
         
-        # 更新summary
+        # Update summary
         for row in summary_rows:
             key = row['experiment']
             if key in eval_dict:
                 row['B_test_acc'] = eval_dict[key]['B_test_acc']
     
-    # 汇总MIA结果
+    # Summarize MIA results
     if 'mia' in results:
         mia_dict = {}
         for _, row in results['mia'].iterrows():
@@ -173,7 +173,7 @@ def generate_summary_table(results, output_file="results/summary_table.csv"):
             if key in mia_dict:
                 row['mia_roc_auc'] = mia_dict[key]
     
-    # 保存汇总表
+    # Save summary table
     if summary_rows:
         df = pd.DataFrame(summary_rows)
         df.to_csv(output_file, index=False)

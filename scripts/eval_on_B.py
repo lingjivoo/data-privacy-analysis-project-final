@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-在 Hospital B 的 test.jsonl 上评估 BERT / BERT-DANN 模型（不再使用 TF-IDF）。
+Evaluate BERT / BERT-DANN models on Hospital B's test.jsonl (no longer using TF-IDF).
 
 - model_type = "baseline":
-    加载在 A 上用 train_bert_nli_on_A.py 训练的 EncHead(BERT encoder + 分类头)
-    ckpt_dir 下需要:
+    Load EncHead(BERT encoder + classification head) trained on A using train_bert_nli_on_A.py
+    ckpt_dir needs:
         - encoder_meta.json
-        - model_best.pt 或 model_final.pt
+        - model_best.pt or model_final.pt
 
 - model_type = "dann":
-    加载用 train_domain_adapt_A2B.py 训练的 BertDANN(BERT encoder + 分类头 + domain head)
-    ckpt_dir 下需要:
+    Load BertDANN(BERT encoder + classification head + domain head) trained using train_domain_adapt_A2B.py
+    ckpt_dir needs:
         - encoder_meta.json
         - bert_dann_model.pt
 
-输出：
+Output:
     - B-test Accuracy / Macro-F1 / per-class F1
     - classification report
-    - 追加一行到 results/eval_B_results.csv
+    - Append one row to results/eval_B_results.csv
 """
 
 import json
@@ -42,10 +42,10 @@ LABEL2ID = {"entailment": 0, "contradiction": 1, "neutral": 2}
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
 
 
-# ========= 数据集 & collate ========= #
+# Dataset loading and collate functions
 
 def load_jsonl_xy(path):
-    """从 JSONL 加载 sentence1/2 + gold_label"""
+    """Loads sentence1/2 + gold_label from JSONL file"""
     X, y = [], []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -71,7 +71,7 @@ class TextDatasetXY(Dataset):
 
 
 def make_collate(tokenizer, max_length):
-    """将 (text, label) batch 转成 (input_ids, attention_mask, labels)"""
+    """Converts (text, label) batch into (input_ids, attention_mask, labels)"""
 
     def collate(batch):
         texts, labels = zip(*batch)
@@ -88,11 +88,11 @@ def make_collate(tokenizer, max_length):
     return collate
 
 
-# ========= 与训练脚本对齐的结构 ========= #
+# Model structures (keep consistent with training scripts)
 
 def mean_pooling(last_hidden_state: torch.Tensor,
                  attention_mask: torch.Tensor) -> torch.Tensor:
-    """与 train_bert_nli_on_A.py 一致的 mean pooling"""
+    """Mean pooling - same impl as train_bert_nli_on_A.py"""
     mask = attention_mask.unsqueeze(-1).type_as(last_hidden_state)
     summed = (last_hidden_state * mask).sum(dim=1)
     counts = torch.clamp(mask.sum(dim=1), min=1e-9)
@@ -100,7 +100,7 @@ def mean_pooling(last_hidden_state: torch.Tensor,
 
 
 class MLPHead(nn.Module):
-    """与 train_bert_nli_on_A.py 相同的 MLP 分类头"""
+    """MLP head - same as train_bert_nli_on_A.py"""
 
     def __init__(self, input_dim, num_classes,
                  hidden_dims=None, dropout: float = 0.3,
@@ -126,7 +126,7 @@ class MLPHead(nn.Module):
 
 
 class LogisticHead(nn.Module):
-    """单层线性分类头"""
+    """Simple linear head"""
 
     def __init__(self, d, c):
         super().__init__()
@@ -138,9 +138,9 @@ class LogisticHead(nn.Module):
 
 class EncHead(nn.Module):
     """
-    与 train_bert_nli_on_A.py 的 EncHead 一致：
+    Encoder + head model (matches train_bert_nli_on_A.py)
     - encoder: BERT
-    - head: LogisticHead 或 MLPHead
+    - head: LogisticHead or MLPHead
     """
 
     def __init__(self, encoder: AutoModel, head: nn.Module, pooling: str = "mean"):
@@ -161,7 +161,7 @@ class EncHead(nn.Module):
 
 
 class GRL(torch.autograd.Function):
-    """Gradient Reversal Layer（供 BertDANN 使用）"""
+    """Gradient Reversal Layer for DANN"""
 
     @staticmethod
     def forward(ctx, x, lambd):
@@ -175,10 +175,10 @@ class GRL(torch.autograd.Function):
 
 class BertDANN(nn.Module):
     """
-    与 train_domain_adapt_A2B.py 中的 BertDANN 对齐：
+    BERT-DANN model (matches train_domain_adapt_A2B.py)
       - encoder: BERT encoder
-      - head:    NLI 分类头
-      - dom:     域分类头（评估时不用）
+      - head:    NLI classification head
+      - dom:     Domain classifier (not used in eval)
     """
 
     def __init__(self, encoder: AutoModel, head: nn.Module,
@@ -215,13 +215,13 @@ class BertDANN(nn.Module):
         return y_logits, d_logits
 
 
-# ========= 构建模型（baseline / dann） ========= #
+# Model building functions
 
 def build_model_and_tokenizer(ckpt_dir: Path,
                               model_type: str,
                               device: torch.device):
     """
-    从 ckpt_dir 构建 BERT 模型和 tokenizer：
+    Builds model and tokenizer from checkpoint dir
       - baseline: EncHead + model_best.pt/model_final.pt
       - dann:     BertDANN + bert_dann_model.pt
     """
@@ -247,7 +247,7 @@ def build_model_and_tokenizer(ckpt_dir: Path,
     tokenizer = AutoTokenizer.from_pretrained(encoder_name, use_fast=True)
     encoder = AutoModel.from_pretrained(encoder_name, use_safetensors=True)
 
-    # 构建分类头
+    # Build classification head
     if head_type == "logistic":
         head = LogisticHead(hidden_size, 3)
     else:
@@ -302,14 +302,14 @@ def build_model_and_tokenizer(ckpt_dir: Path,
     return tokenizer, model, max_length, meta
 
 
-# ========= 评估 ========= #
+# Evaluation function
 
 def eval_on_B(model, tokenizer, X_txt, y,
               max_length: int,
               device: torch.device,
               model_type: str,
               batch_size: int = 64):
-    """在 B-test 上评估模型，返回 accuracy, macro-F1, per-class F1, preds, labels"""
+    """Runs evaluation on B-test data, returns acc, macro-F1, per-class F1, predictions, labels"""
     ds = TextDatasetXY(X_txt, y)
     collate = make_collate(tokenizer, max_length)
     dl = DataLoader(ds, batch_size=batch_size, shuffle=False, collate_fn=collate)
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     ap.add_argument(
         "--ckpt_dir",
         required=True,
-        help="包含 encoder_meta.json 以及 model_best.pt/model_final.pt (baseline) 或 bert_dann_model.pt (dann)",
+        help="Directory containing encoder_meta.json and model_best.pt/model_final.pt (baseline) or bert_dann_model.pt (dann)",
     )
     ap.add_argument(
         "--model_type",
@@ -360,22 +360,22 @@ if __name__ == "__main__":
     ap.add_argument(
         "--result-name",
         type = str,
-        help="包含 encoder_meta.json 以及 model_best.pt/model_final.pt (baseline) 或 bert_dann_model.pt (dann)",
+        help="Result file name prefix",
     )
     args = ap.parse_args()
 
     device = torch.device(args.device)
     ckpt_dir = Path(args.ckpt_dir)
 
-    # 1) 构建模型 + tokenizer
+    # 1) Build model + tokenizer
     tokenizer, model, max_length, meta = build_model_and_tokenizer(
         ckpt_dir, args.model_type, device
     )
 
-    # 2) 加载 B-test 数据
+    # 2) Load B-test data
     X_txt, y = load_jsonl_xy(args.B_test_jsonl)
 
-    # 3) 评估
+    # 3) Evaluate
     accuracy, f1_macro, f1_per_class, preds, labels = eval_on_B(
         model, tokenizer, X_txt, y, max_length, device, args.model_type
     )
@@ -398,7 +398,7 @@ if __name__ == "__main__":
         )
     )
 
-    # 4) 读取 DP 参数（优先 config.json，其次 encoder_meta.json）
+    # 4) Read DP parameters (prefer config.json, then encoder_meta.json)
     dp_epsilon = "none"
     config_path = ckpt_dir / "config.json"
     if config_path.exists():
@@ -406,14 +406,14 @@ if __name__ == "__main__":
             config = json.load(f)
             dp_epsilon = config.get("dp_epsilon", "none")
     else:
-        # baseline BERT 的 DP 信息可能写在 encoder_meta.json 里
+        # DP information for baseline BERT may be written in encoder_meta.json
         e = meta.get("dp_epsilon", 0.0)
         if isinstance(e, (int, float)) and e > 0:
             dp_epsilon = e
         else:
             dp_epsilon = "none"
 
-    # 5) 写入 results/eval_B_results.csv
+    # 5) Write to results/eval_B_results.csv
     results_dir = Path("results")
     results_dir.mkdir(exist_ok=True)
     results_file = os.path.join("results",    args.result_name + "_results.csv")

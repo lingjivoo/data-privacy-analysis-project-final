@@ -367,11 +367,11 @@ def main():
     ap.add_argument(
         "--output_prefix",
         default="mia_ml",
-        help="输出文件前缀",
+        help="Output file prefix",
     )
     args = ap.parse_args()
     
-    # 解析路径
+    # Parse path
     csv_path = Path(args.csv_path)
     if not csv_path.is_absolute():
         script_dir = Path(__file__).parent

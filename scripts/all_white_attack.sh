@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 批量对白盒攻击脚本提交 SLURM 任务，并汇总日志结果。
+# Batch submit white-box attack jobs to SLURM
 set -euo pipefail
 
 source /ibex/user/yangz0h/miniconda3/etc/profile.d/conda.sh
@@ -13,14 +13,14 @@ SUMMARY_LOG="${LOG_DIR}/white_box_summary.log"
 mkdir -p "${LOG_DIR}"
 
 if [[ ! -d "${CHECKPOINTS_DIR}" ]]; then
-  echo "未找到检查点目录: ${CHECKPOINTS_DIR}" >&2
+  echo "Checkpoint directory not found: ${CHECKPOINTS_DIR}" >&2
   exit 1
 fi
 
-# 将混淆矩阵等最终输出从日志中摘取出来
+# Extract results from logs (confusion matrix etc)
 extract_result_block() {
   local log_file="$1"
-  # 取日志末尾一部分，找到“混淆矩阵”开始的块
+  # Get end of log, find confusion matrix section
   tail -n 200 "${log_file}" | awk '
     /混淆矩阵/ {flag=1}
     flag {print}
@@ -33,13 +33,13 @@ for ckpt_path in "${CHECKPOINTS_DIR}"/*; do
   [[ -d "${ckpt_path}" ]] || continue
   ckpt_name="$(basename "${ckpt_path}")"
 
-  # 模型类型判定：默认 dann，特例 ckpt_bert_A_finetune_max512 用 baseline
+  # Determine model type (default: dann, special case: baseline)
   model_type="dann"
   if [[ "${ckpt_name}" == "ckpt_bert_A_finetune_max512" ]]; then
     model_type="baseline"
   fi
 
-  # 两份数据集：a 使用默认（A），b 使用 B 语料
+  # Run on both datasets: a=A, b=B
   for data_tag in a b; do
     if [[ "${data_tag}" == "a" ]]; then
       extra_args="--output_prefix white_box_attack_${ckpt_name}_a"
@@ -67,6 +67,6 @@ for ckpt_path in "${CHECKPOINTS_DIR}"/*; do
       --parsable \
       --wrap "${cmd}")
 
-    echo "提交任务: ${job_name} (数据集: ${dataset_name}, 模型类型: ${model_type}) -> JobID ${job_id}, 日志: ${log_file}"
+    echo "Submitted task: ${job_name} (dataset: ${dataset_name}, model type: ${model_type}) -> JobID ${job_id}, log: ${log_file}"
   done
 done

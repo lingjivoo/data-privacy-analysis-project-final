@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-从 A 的 JSONL 合成 Hospital B 数据：
-- 术语/拼写差异（英/美式、缩写变化）
-- 生命体征格式变化（单位/标点/顺序）
-- 文风扰动（大小写、冗余词、科室/设备前缀、模板开头）
-- class label 不变
+Synthesize Hospital B data from A's JSONL:
+- Terminology/spelling differences (British/American, abbreviation changes)
+- Vital signs format changes (units/punctuation/order)
+- Style perturbations (case, redundant words, department/equipment prefixes, template headers)
+- class label unchanged
 """
 
 import json, random, argparse
@@ -15,7 +15,7 @@ SEED=2025
 random.seed(SEED)
 
 REPLACE_MAP = [
-    # 术语与拼写（示例，可扩展）
+    # Terminology and spelling (examples, can be extended)
     ("ed", "A&E"), ("ED", "A&E"),
     ("hemoglobin", "haemoglobin"),
     ("hematology", "haematology"),
@@ -41,30 +41,30 @@ FILLERS = [
 
 def perturb_text(s):
     t = s
-    # 低概率大小写变化
+    # Low probability case changes
     if random.random() < 0.2:
         t = t.lower()
     if random.random() < 0.2:
         t = t.capitalize()
 
-    # 术语替换
+    # Terminology replacement
     for a, b in REPLACE_MAP:
         t = t.replace(a, b)
 
-    # 生命体征格式扰动：简单正则-free 替换（示例化）
+    # Vital signs format perturbation: simple regex-free replacement (exemplified)
     t = t.replace("HR ", "HeartRate: ")
     t = t.replace("BP ", "BP=")
     t = t.replace("RR ", "RespRate=")
     t = t.replace("T ", "Temp=")
     t = t.replace("sat", "sats")
 
-    # 随机加 filler 或前缀
+    # Randomly add filler or prefix
     if random.random() < 0.5:
         t = random.choice(FILLERS) + " " + t
     if random.random() < 0.6:
         t = random.choice(PREFIXES) + t
 
-    # 随机插入少量符号
+    # Randomly insert a few symbols
     if random.random() < 0.3:
         t = t.replace(".", " ·")
     return t
