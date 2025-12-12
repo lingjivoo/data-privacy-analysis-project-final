@@ -1,10 +1,9 @@
-This README.md v3 is rewritten according to the **latest complete pipeline script** (BERT + DANN + DP-DANN + MIA + PHI scanning + plot_tradeoff). You can directly overwrite the original README with this version:
 
 ---
 
-# DP-MedNLI: Differentially-Private Domain Adaptation for Clinical NLI
+# Differential Privacy for Domain Adaptation on Medical Data
 
-This repository is a reference implementation of the **DP-MedNLI** project, which systematically studies:
+This repository is a reference implementation of the **Differential Privacy for Domain Adaptation on Medical Data** project, which systematically studies:
 
 > Under the premise of **domain shift (Hospital A → Hospital B)**,
 > when using **BERT + Domain Adaptation (DANN) + Differentially Private Training (DP-SGD)**,
